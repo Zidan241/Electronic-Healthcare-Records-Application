@@ -1,0 +1,22 @@
+{
+    "d1":{
+        "name":"Dr. Smith",
+        "speciality":"Cardiology"
+    },
+    "d2":{
+        "name":"Dr. Jones",
+        "speciality":"Neurology"
+    },
+    "d3":{
+        "name":"Dr. Johnson",
+        "speciality":"Orthopedics"
+    },
+    "d4":{
+        "name":"Dr. Brown",
+        "speciality":"Gastroenterology"
+    },
+    "d5":{
+        "name":"Dr. Wilson",
+        "speciality":"Dermatology"
+    }
+}
