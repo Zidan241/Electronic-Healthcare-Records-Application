@@ -1,73 +1,46 @@
-class Block {
-    constructor(id, data, prevHash = ''){
-      this.id = id;
-      this.prevHash = this.prevHash;
-      this.hash = this.calcHash();
-      this.data = data;
-    }
-    calcHash() {
-      return CryptoJS.SHA512(this.id + JSON.stringify(this.data)).toString();
-    }
-  
+const SHA256 = require("crypto-js/sha256");
+class Block{
+  constructor(index, timestamp, data, previousHash){
+    this.index = index;
+    this.timestamp = timestamp;
+    this.data = data;
+    this.previousHash = previousHash;
+    this.hash = this.generateHash();
   }
-  class Chain {
-    constructor(){
-      this.chain = [this.genesisBlock()];
-    }
-    genesisBlock(){
-      return new Block(0,'Chain started.');
-    }
-    getLastBlock(){
-      return this.chain[this.chain.length - 1];
-    }
-    addBlock(block){
-      block.prevHash = this.getLastBlock().hash;
-      block.hash = block.calcHash();
-      this.chain.push(block)
-    }
-    isValid(){
-      for(let i = 1; i < this.chain.length; i++){
-        let prev = this.chain[i-1], current = this.chain[i];
-        if(current.hash !== prev.prevHash || current.hash !== current.calcHash())
-         return false;
-      }return true;
-    }
-  
+
+  generateHash(){
+    return SHA256(this.index + this.timestamp + this.previousHash + JSON.stringify(this.data)).toString()
   }
-  
-  // Msg.js
-  class Msg {
-    constructor(msg, date){
-      this.msg = msg;
-      const D = new Date();
-      this.date = [D.getHours(), D.getMinutes(), D.getSeconds()].join(' : ');
-    }
+}
+class Blockchain{
+  constructor(){
+      this.blockchain = [this.createGenesisBlock()];
   }
-  
-  // Test.js
-  FROZENCHAINS = [];
-  CHAIN = new Chain();
-  i = 0;
-  
-  msg = () => {
-    let text = $('input').val();
-    i++;
-   CHAIN.addBlock(new Block(i, text));
-  
-   let msg = JSON.stringify(CHAIN.chain,null, 4);
-  
-   $('#log').text(msg);
-   let thisMSG = new Msg(text);
-  
-   $('section').append('<div class="notification is-primary"><span class="tag">' + thisMSG.msg + '</span>'
-   + '<span class="tag">Created at: ' + thisMSG.date + '</span><button onclick="$(this).parent().hide() && newChain()" align=center class="delete is-large"></button></div>')
-  
-  
+  createGenesisBlock(){
+      return new Block(0, new Date(), "first block on the chain", "0");
   }
-  
-  newChain = () => {
-    FROZENCHAINS.push(CHAIN);
-    delete CHAIN;
-    CHAIN = new Chain();
-    CHAIN.addBlock(1,'Hi')
+  getTheLatestBlock(){
+      return this.blockchain[this.blockchain.length - 1];
   }
+  addNewBlock(newBlock){
+      newBlock.previousHash = this.getLatestBlock().hash;
+      newBlock.hash = newBlock.generateHash();
+      this.blockchain.push(newBlock);
+  }
+
+  // testing the integrity of the chain
+  validateChainIntegrity(){
+      for(let i = 1; i<this.blockchain.length; i++){
+          const currentBlock = this.blockchain[i];
+          const previousBlock = this.blockchain[i-1];
+          if(currentBlock.hash !== currentBlock.generateHash()){
+              return false;
+          }
+          if(currentBlock.previousHash !== previousBlock.hash){
+              return false;
+          }
+          return true;
+
+      }
+  }
+} 

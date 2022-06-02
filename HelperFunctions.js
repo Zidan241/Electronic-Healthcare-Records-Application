@@ -51,6 +51,6 @@ function verifySignature(data, signature, publicKey) {
     const verified = crypto.publicDecrypt(publicKey, Buffer.from(signature, 'base64'));
     return verified.toString('utf8') === data;
 }
-const keys = generateKeyPair();
-const encryptedData = encrypt('Hello World', keys.publicKey);
-console.log(encryptedData);
+
+exports.generateSignature = generateSignature;
+exports.verifySignature = verifySignature;
