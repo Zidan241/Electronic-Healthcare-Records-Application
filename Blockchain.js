@@ -43,4 +43,7 @@ class Blockchain{
 
       }
   }
-} 
+}
+
+exports.Block = Block;
+exports.Blockchain = Blockchain;
