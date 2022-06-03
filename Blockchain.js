@@ -6,6 +6,7 @@ class Block{
     this.data = data;
     this.previousHash = previousHash;
     this.hash = this.generateHash();
+    console.log("Block created");
   }
 
   generateHash(){
@@ -15,11 +16,12 @@ class Block{
 class Blockchain{
   constructor(){
       this.blockchain = [this.createGenesisBlock()];
+      console.log("Blockchain created");
   }
   createGenesisBlock(){
       return new Block(0, new Date(), "first block on the chain", "0");
   }
-  getTheLatestBlock(){
+  getLatestBlock(){
       return this.blockchain[this.blockchain.length - 1];
   }
   addNewBlock(newBlock){

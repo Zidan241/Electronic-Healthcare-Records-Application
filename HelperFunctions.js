@@ -39,18 +39,19 @@ function generateHash(data) {
 
 //generate signature
 function generateSignature(data, privateKey) {
-    const hash = generateHash(data);
-    const signature = crypto.createSign('RSA-SHA256');
-    signature.update(hash);
-    return signature.sign(privateKey, 'hex');
+    const buffer = Buffer.from(data);
+    const signature = crypto.sign('RSA-SHA256', buffer , privateKey);
+    return signature;
 }
 
 //verify signature
 function verifySignature(data, signature, publicKey) {
     const buffer = Buffer.from(data);
-    const verified = crypto.publicDecrypt(publicKey, Buffer.from(signature, 'base64'));
-    return verified.toString('utf8') === data;
+    const isVerified = crypto.verify('RSA-SHA256', buffer, publicKey, signature);
+    return isVerified;
 }
-
+exports.encrypt = encrypt;
+exports.decrypt = decrypt;
+exports.generateKeyPair = generateKeyPair;
 exports.generateSignature = generateSignature;
 exports.verifySignature = verifySignature;
