@@ -1,4 +1,4 @@
-const {verifySignature, generateKeyPair} = require('./HelperFunctions.js');
+const {generateSignature, verifySignature, generateKeyPair, decrypt, generateHash} = require('./HelperFunctions.js');
 const {addKey,getKey} = require('./PublicKeysStorage.js');
 const {Block} = require('./Blockchain.js');
 
@@ -18,21 +18,27 @@ class CentralAuthority{
         const senderPublicKey = getKey(senderId);
         //verify signature
         if(verifySignature(transactionData, signature, senderPublicKey)){
+            //decrypt data using central authority private key
+            const decryptedData = decrypt(transactionData, this.privateKey);
             //add transaction to buffer
-            this.transactionsBuffer.push(transactionData);
+            this.transactionsBuffer.push(decryptedData);
             this.addNewBlockCheck();
-            //return true
+            console.log("Transaction added");
+            //verification successful
             return true;
         }
-        this.transactionsBuffer.push(newBlock);
+        //verification failed
+        console.log("Verification failed");
+        return false;
     }
     addNewBlockCheck(){
         //if there are more than 10 transactions in the buffer, create a new block
         if(this.transactionsBuffer.length >= 1){
             const newBlock = new Block(this.blockchain.getLatestBlock().index + 1, new Date(), this.transactionsBuffer, this.blockchain.getLatestBlock().hash);
-            this.blockchain.addNewBlock(newBlock);
+            const newBlockHash = generateHash(JSON.stringify(newBlock));
+            const signature = generateSignature(newBlockHash, this.privateKey);
+            this.blockchain.addNewBlock(newBlock,signature, this.id);
             this.transactionsBuffer = [];
-            console.log(newBlock);
         }
     }
 }

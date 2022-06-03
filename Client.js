@@ -14,7 +14,8 @@ class Client{
         console.log("Client created");
     }
     addPatient(patientData){
-        const encryptedData = encrypt(patientData, this.publicKey);
+        const centralAuthorityPublicKey = this.centralAuthority.publicKey;
+        const encryptedData = encrypt(patientData, centralAuthorityPublicKey);
         const signature = generateSignature(encryptedData, this.privateKey);
         this.centralAuthority.addNewTransaction(encryptedData, signature, this.id);
     }
