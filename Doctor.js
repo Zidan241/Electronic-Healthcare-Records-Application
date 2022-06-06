@@ -1,7 +1,8 @@
 const {addKey} = require('./PublicKeysStorage.js');
-const {Visit, Transaction} = require('./Blockchain.js');
 const {generateKeyPair,decrypt} = require('./HelperFunctions.js');
 const { Patient } = require('./Patient.js');
+const {Visit} = require('./Visit.js');
+const {Transaction} = require('./Transaction.js');
 
 class Doctor{
     constructor(id, name){
