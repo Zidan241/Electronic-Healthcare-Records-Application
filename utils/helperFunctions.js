@@ -5,6 +5,11 @@ function generateHash(data) {
     return crypto.createHash('sha256').update(data).digest('hex');
 }
 
+//generate symmetric key
+function generateSymmetricKey() {
+    return crypto.randomBytes(32);
+}
+
 //symmetric encryption
 function encryptSymmetric(data, key, iv) {
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
@@ -65,6 +70,7 @@ function verifySignature(data, signature, publicKey) {
     return isVerified;
 }
 
+exports.generateSymmetricKey = generateSymmetricKey;
 exports.generateHash = generateHash;
 exports.encryptSymmetric = encryptSymmetric;
 exports.decryptSymmetric = decryptSymmetric;

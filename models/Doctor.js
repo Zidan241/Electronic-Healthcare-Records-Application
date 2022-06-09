@@ -1,18 +1,18 @@
-const {addKey} = require('./PublicKeysStorage.js');
-const {generateKeyPair,decrypt} = require('./HelperFunctions.js');
-const { Patient } = require('./Patient.js');
-const {Visit} = require('./Visit.js');
+const {addKey, getLength} = require('../db/publicKeysStorage.js');
+const {generateKeyPair,decrypt} = require('../utils/helperFunctions.js');
+const Patient = require('./Patient.js');
+const Visit = require('./Visit.js');
 const {Transaction} = require('./Transaction.js');
+const {generateKeyPair} = require('./utils/helperFunctions');
+const { v4: uuidv4 } = require('uuid');
 
 class Doctor{
-    constructor(id, name){
+    constructor(){
+        this.id = `doc-${getLength()}`;
         const {publicKey,privateKey} = generateKeyPair();
         addKey(publicKey, id);
-        this.id = id;
-        this.name = name;
         this.publicKey = publicKey;
         this.privateKey = privateKey;
-        console.log("Doctor created");
     };
 
     /**
@@ -22,13 +22,12 @@ class Doctor{
      * @param {String} intialTemperature
      * @returns {Transaction}
      */
-    addPatient(patient, intialBloodPressure, intialPulse, intialTemperature){
-        if(!patient) throw new Error('No patient');
-        if(!intialBloodPressure || intialBloodPressure.length==0) throw new Error('No initial blood pressure');
-        if(!intialPulse || intialPulse.length==0) throw new Error('No initial pulse');
-        if(!intialTemperature || intialTemperature.length==0) throw new Error('No initial temperature');
-        const visit = new Visit(intialBloodPressure, intialPulse, intialTemperature);
-        const transaction = new Transaction(this.id, patient.id, visit, patient);
+    addPatient(data){
+        const {name, age, weight, height, gender, bloodPressure, pulse, temperature} = body;
+        if(!name||!age||!weight||!height||!gender||!bloodPressure||!pulse||!temperature){
+            return null;
+        }
+        const transaction = new Transaction(this.id, uuidv4() , body);
         transaction.signTransaction(this.privateKey);
         return transaction;
     };
@@ -62,4 +61,4 @@ class Doctor{
 
 }
 
-exports.Doctor = Doctor;
+module.exports = Doctor;

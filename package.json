@@ -18,6 +18,13 @@
   },
   "homepage": "https://github.com/Zidan241/Electronic-Healthcare-Records-Application#readme",
   "dependencies": {
-    "crypto-js": "^4.1.1"
+    "axios": "^0.27.2",
+    "crypto-js": "^4.1.1",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "portfinder": "^1.0.28",
+    "socket.io": "^4.5.1",
+    "socket.io-client": "^4.5.1",
+    "uuid": "^8.3.2"
   }
 }
