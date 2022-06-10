@@ -8,15 +8,15 @@ class Block{
      * @param {Date} timestamp
      * @param {Transaction[]} transactions
      * @param {string} previousHash
+     * @param {number} nonce
      */
-    constructor(index, timestamp, transactions, previousHash){
+    constructor(index, timestamp, transactions, previousHash, nonce) {
       this.index = index;
       this.timestamp = timestamp;
       this.transactions = transactions;
       this.previousHash = previousHash;
       this.hash = this.generateHash();
-      this.nonce = 0;
-      this.patients = {};
+      this.nonce = nonce;
     };
 
     /**
@@ -53,6 +53,6 @@ class Block{
       }
       return true;
     };
-}
+};
 
 module.exports = Block;

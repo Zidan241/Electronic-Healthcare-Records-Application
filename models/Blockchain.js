@@ -21,22 +21,22 @@ class Blockchain {
    * @returns {Block}
    */
   createGenesisBlock() {
-    return new Block(0, Date.parse("2017-01-01"), [], "0");
-  }
+    return new Block(0, Date.parse("2017-01-01"), [], "0", 0);
+  };
 
   /**
    * @returns {Block}
    */
   getLatestBlock() {
     return this.blockchain[this.blockchain.length - 1];
-  }
+  };
 
   /**
    * @param {number} node
    */
   addNode(node) {
     this.nodes.push(node);
-  }
+  };
 
   /**
    * @param {Transaction} transaction
@@ -45,7 +45,30 @@ class Blockchain {
     if (transaction.isValid()) {
       //TODO: check if this docotor is allowed to add a transaction for this patient
 
-      //update block
+      //get the patients last transaction
+      const lastTransactionIndex = this.getIndexOfLastTransaction(transaction.patientId);
+      const lastTransaction = null;
+      if(lastTransactionIndex != null){
+        lastTransaction = this.blockchain[lastTransactionIndex[0]].transactions[lastTransactionIndex[1]];
+      }
+      transaction.previousTransaction = lastTransaction;
+
+      //loop over all transactions and check that the doctor id is in one of the transactions in the 'to' field
+      var flag = false;
+      const patientTransactions = this.getTransactions(transaction.patientId);
+      for(let i=0 ; i<patientTransactions.length ; i++){
+        if(patientTransactions[i].doctorId == transaction.doctorId || patientTransactions[i].refferalId == transaction.refferalId){
+          flag = true;
+          break;
+        }
+      }
+      if(patientTransactions.length == 0){
+        flag = true;
+      }
+      if(!flag){
+        console.error("Doctor is not allowed to add a transaction for this patient");
+      }
+      
       //add transaction to buffer
       this.transactionBuffer.push(transaction);
       console.log("Transaction added");
@@ -53,64 +76,65 @@ class Blockchain {
       if (this.transactionBuffer.length >= this.bufferLimit) {
         console.info("Starting mining block...");
         process.env.BREAK = false;
-        this.transactionBuffer = [];
         this.mineBlock();
+        this.transactionBuffer = [];
       }
     } else {
       //verification failed
-      throw new Error("Invalid transaction");
+      console.error("Transaction verification failed");
+      console.error(transaction);
     }
-  }
+  };
 
   async mineBlock() {
     const newBlock = new Block(
       this.getLatestBlock().index + 1,
       new Date(),
       this.transactionBuffer,
-      this.getLatestBlock().hash
+      this.getLatestBlock().hash,
+      0
     );
     const breakFlag = await newBlock.mineBlock(this.difficulty);
     if (breakFlag != "true") {
       this.blockchain.push(newBlock);
       console.log("Block successfully mined!");
-      this.io.emit(actions.END_MINING, this.toArray());
+      this.io.emit(actions.END_MINING, this.blockchain);
     }
-  }
+  };
 
   /**
-   * @returns {boolean}
-   * @param {string} doctorId
    * @param {string} patientId
-   * @returns {string} all encrypted transactions for a patient and a doctor
+   * @returns {Transaction[]} all encrypted transactions for a patient and their index in the blockchain
    */
-  getTransactions(patientId, doctorId) {
-    if (!this.validateChainIntegrity()) {
-      throw new Error("Chain integrity compromised");
-    }
+  getTransactions(patientId) {
     let transactions = [];
-    for (let i = 0; i < this.blockchain.length; i++) {
-      for (let j = 0; j < this.blockchain[i].transactions.length; j++) {
-        if (
-          this.blockchain[i].transactions[j].patientId === patientId &&
-          this.blockchain[i].transactions[j].doctorId === doctorId
-        ) {
-          transactions.push(this.blockchain[i].transactions[j]);
-        }
-      }
-    }
-    //validate transactions integrity using the previous hash
-    for (let i = 1; i < transactions.length; i++) {
-      const currentTransaction = transactions[i];
-      const previousTransaction = transactions[i - 1];
-      if (currentTransaction.previousHash !== previousTransaction.hash) {
-        throw new Error("Transactions integrity compromised");
-      }
-      if (currentTransaction.hash !== currentTransaction.generateHash()) {
-        throw new Error("Transactions integrity compromised");
+    var transactionIndex = this.getIndexOfLastTransaction(patientId);
+    if(transactionIndex != null){
+      var transaction = this.blockchain[transactionIndex[0]].transactions[transactionIndex[1]];
+      while (transaction != null) {
+        transactions.push(transaction);
+        transactionIndex = transaction.previousTransaction;
+        transaction = this.blockchain[transactionIndex[0]].transactions[transactionIndex[1]];
       }
     }
     return transactions;
-  }
+  };
+
+  /**
+   * @param {string} patientId
+   * @returns {number[]} all encrypted transactions for a patient and their index in the blockchain
+   */
+  getIndexOfLastTransaction(patientId){
+    for (let i = this.blockchain.length - 1 ; i >= 0 ; i--) {
+      for (let j = 0 ; j < this.blockchain[i].transactions.length ; j++) {
+        if (this.blockchain[i].transactions[j].patientId === patientId) {
+          return [i,j];
+          break;
+        }
+      }
+    }
+    return null;
+  };
 
   /**
    * @returns {boolean}
@@ -138,17 +162,12 @@ class Blockchain {
     return true;
   };
 
-  toArray() {
-    return this.blockchain.map(block => block.getDetails());
-  };
-
-  parseChain(blocks) {
+  parseBlockchain(blocks) {
     this.blockchain = blocks.map(block => {
-      const parsedBlock = new Block(0);
-      parsedBlock.parseBlock(block);
-      return parsedBlock;
+      const newBlock = new Block(block.index, block.timestamp, block.transactions, block.previousHash, block.nonce);
+      return newBlock;
     });
-  }
-}
+  };
+};
 
 module.exports = Blockchain;

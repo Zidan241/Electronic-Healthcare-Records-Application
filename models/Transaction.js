@@ -7,8 +7,9 @@ class Transaction {
      * @param {string} patientId
      * @param {Object} data
      */
-    constructor(doctorId, patientId, data) {
+    constructor(doctorId, patientId, data, referralId) {
       this.doctorId = doctorId;
+      this.referralId = referralId;
       this.patientId = patientId;
       this.data = data;
       this.timestamp = Date.now();
@@ -17,8 +18,8 @@ class Transaction {
     /**
      * @param {string} symetricKey
      */
-    encryptData(symetricKey) {
-      this.data = encryptSymmetric(JSON.stringify(this.data), symetricKey);
+    encryptData(symetricKey, iv) {
+      this.data = encryptSymmetric(JSON.stringify(this.data), symetricKey, iv);
     };
 
     /**
@@ -39,13 +40,23 @@ class Transaction {
     };
 
     getDetails() {
-      const { doctorId, patientId, data, timestamp} = this;
-      return (
-        doctorId+
-        patientId+
-        data+
+      const { doctorId, referralId, patientId, data, timestamp} = this;
+      return JSON.stringify({
+        doctorId,
+        referralId,
+        patientId,
+        data,
         timestamp
-      );
+      });
+    };
+
+    parseTransaction(transaction) {
+      this.doctorId = transaction.doctorId;
+      this.referralId = transaction.referralId;
+      this.patientId = transaction.patientId;
+      this.data = transaction.data;
+      this.timestamp = transaction.timestamp;
+      this.signature = transaction.signature;
     };
 };
 

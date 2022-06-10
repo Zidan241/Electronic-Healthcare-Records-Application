@@ -5,12 +5,16 @@ function generateHash(data) {
     return crypto.createHash('sha256').update(data).digest('hex');
 }
 
-//generate symmetric key
+//generate symmetric key and iv
 function generateSymmetricKey() {
-    return crypto.randomBytes(32);
+    const key = crypto.randomBytes(32);
+    const iv = crypto.randomBytes(16);
+    return {
+        key: key,
+        iv: iv
+    };
 }
 
-//symmetric encryption
 function encryptSymmetric(data, key, iv) {
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
     let encrypted = cipher.update(data, 'utf8', 'hex');
