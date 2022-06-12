@@ -6,13 +6,22 @@ class Transaction {
      * @param {string} doctorId
      * @param {string} patientId
      * @param {Object} data
+     * @param {string} referralId
      */
     constructor(doctorId, patientId, data, referralId) {
       this.doctorId = doctorId;
-      this.referralId = referralId;
       this.patientId = patientId;
       this.data = data;
-      this.timestamp = new Date();
+      this.timestamp = Date.now();
+      this.referralId = referralId;
+    };
+
+    /**
+     * 
+     */
+    updateTransaction(previousTransaction, previousAllowedDoctors) {
+      this.previousTransaction = previousTransaction;
+      this.allowedDoctors = previousAllowedDoctors;
     };
 
     /**
@@ -55,8 +64,9 @@ class Transaction {
       this.referralId = transaction.referralId;
       this.patientId = transaction.patientId;
       this.data = transaction.data;
-      this.timestamp = new Date(transaction.timestamp);
+      this.timestamp = transaction.timestamp;
       this.signature = transaction.signature;
+      this.previousTransaction = transaction.previousTransaction;
     };
 };
 

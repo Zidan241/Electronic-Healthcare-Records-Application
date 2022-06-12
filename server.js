@@ -9,10 +9,9 @@ const Transaction = require('./models/Transaction');
 const actions  = require('./utils/constants');
 const socketListeners = require('./socketListeners');
 var portfinder = require('portfinder');
-const {generateKeyPair, generateSymmetricKey, encrypt} = require('./utils/helperFunctions');
+const {generateKeyPair, generateSymmetricKey, encrypt, decryptSymmetric} = require('./utils/helperFunctions');
 const {addKey, getLength, getKey} = require('./db/publicKeysStorage');
 const { v4: uuidv4 } = require('uuid');
-require('dotenv').config();
 
 portfinder.getPort(function (err, PORT) {
     var breakFlag = false;
@@ -91,6 +90,22 @@ portfinder.getPort(function (err, PORT) {
 
     app.get('/chain', (req, res) => {
         res.json(blockchain.blockchain).end();
+    });
+
+    app.get('/chain/:patientId', (req, res) => {
+        //get all transactions for patient
+        const {patientId} = req.params;
+        const txs = blockchain.getTransactions(patientId);
+        //decrypt transactions
+        const decryptedTxs = txs.map(tx => {
+            const {data} = tx;
+            const {key, iv} = patients[patientId];
+            return {
+                ...tx,
+                data: JSON.parse(decryptSymmetric(data, key, iv))
+            }
+        });
+        res.json(decryptedTxs).end();
     });
 
     io.on('connection', (socket) => {

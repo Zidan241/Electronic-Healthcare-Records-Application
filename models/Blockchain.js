@@ -24,7 +24,7 @@ class Blockchain {
    * @returns {Block}
    */
   createGenesisBlock() {
-    return new Block(0, new Date("2017-01-01"), [], "0", null, 0);
+    return new Block(0, Date.now("2017-01-01"), [], "0", null, 0);
   };
 
   /**
@@ -51,25 +51,22 @@ class Blockchain {
       //get the patients last transaction
       const lastTransactionIndex = this.getIndexOfLastTransaction(transaction.patientId);
       const lastTransaction = null;
+      const allowedDoctors = [];
       if(lastTransactionIndex != null){
         lastTransaction = this.blockchain[lastTransactionIndex[0]].transactions[lastTransactionIndex[1]];
-      }
-      transaction.previousTransaction = lastTransaction;
-
-      //loop over all transactions and check that the doctor id is in one of the transactions in the 'to' field
-      var flag = false;
-      const patientTransactions = this.getTransactions(transaction.patientId);
-      for(let i=0 ; i<patientTransactions.length ; i++){
-        if(patientTransactions[i].doctorId == transaction.doctorId || patientTransactions[i].refferalId == transaction.refferalId){
-          flag = true;
-          break;
+        allowedDoctors = lastTransaction.allowedDoctors;
+        if(lastTransaction.referralId){
+          allowedDoctors.push(lastTransaction.referralId);
         }
+      }else{
+        //if there is no transaction for this patient, then he/she is allowed to add the first transaction
+        allowedDoctors.push(transaction.doctorId);
       }
-      if(patientTransactions.length == 0){
-        flag = true;
-      }
-      if(!flag){
-        console.error("Doctor is not allowed to add a transaction for this patient");
+      transaction.updateTransaction(lastTransactionIndex, allowedDoctors);
+
+      //check if doctor is allowed to add a transaction for this patient
+      if(!allowedDoctors.includes(transaction.doctorId)){
+        console.error(`${transaction.doctorId} is not allowed to add a transaction for patient ${transaction.patientId}`);
       }
       
       //add transaction to buffer
@@ -92,7 +89,7 @@ class Blockchain {
   async mineBlock() {
     const newBlock = new Block(
       this.getLatestBlock().index + 1,
-      new Date(),
+      Date.now(),
       this.transactionBuffer,
       this.getLatestBlock().hash,
       null,

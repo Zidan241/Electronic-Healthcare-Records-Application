@@ -31,7 +31,12 @@ class Block {
    */
   hasValidTransactions() {
     for (const t of this.transactions) {
-      if (!t.isValid()) return false;
+      if (!t.allowedDoctors.includes(t.allowedDoctors)){
+        return false;
+      }
+      if (!t.isValid()) {
+        return false;
+      }
     }
     return true;
   };
@@ -49,7 +54,7 @@ class Block {
 
   parseBlock(block) {
     this.index = block.index;
-    this.timestamp = new Date(block.timestamp);
+    this.timestamp = block.timestamp;
     this.hash = block.hash;
     this.previousHash = block.previousHash;
     this.nonce = block.nonce;

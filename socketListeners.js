@@ -19,9 +19,10 @@ const socketListeners = (socket, chain, doctorId, privateKey, patients, updateBr
   socket.on(actions.END_MINING, (blocks) => {
     console.log('End Mining encountered');
     updateBreakFlag(true);
+    console.log(blocks[1]);
     const blockchain = new Blockchain();
     blockchain.parseBlockchain(blocks);
-    console.log(blockchain[1]);
+    console.log(blockchain.blockchain[1]);
     if (blockchain.validateChainIntegrity() && blockchain.blockchain.length >= chain.blockchain.length) {
       chain.blockchain = blockchain.blockChain;
       console.info('Chain replaced');
