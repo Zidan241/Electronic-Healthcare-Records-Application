@@ -112,7 +112,7 @@ class Blockchain {
     var transactionIndex = this.getIndexOfLastTransaction(patientId);
     if(transactionIndex != null){
       var transaction = this.blockchain[transactionIndex[0]].transactions[transactionIndex[1]];
-      while (transaction != null) {
+      while (transactionIndex != null) {
         transactions.push(transaction);
         transactionIndex = transaction.previousTransaction;
         transaction = this.blockchain[transactionIndex[0]].transactions[transactionIndex[1]];
