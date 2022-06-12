@@ -31,7 +31,7 @@ class Block {
    */
   hasValidTransactions() {
     for (const t of this.transactions) {
-      if (!t.allowedDoctors.includes(t.allowedDoctors)){
+      if (!t.allowedDoctors.includes(t.doctorId)){
         return false;
       }
       if (!t.isValid()) {

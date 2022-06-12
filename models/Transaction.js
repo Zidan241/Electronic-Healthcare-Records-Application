@@ -67,6 +67,7 @@ class Transaction {
       this.timestamp = transaction.timestamp;
       this.signature = transaction.signature;
       this.previousTransaction = transaction.previousTransaction;
+      this.allowedDoctors = transaction.allowedDoctors;
     };
 };
 

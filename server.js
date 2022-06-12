@@ -24,6 +24,9 @@ portfinder.getPort(function (err, PORT) {
 
     const blockchain = new Blockchain(4, 2, io, getBreakFlag, updateBreakFlag);
     const patients = {};
+    function addPatient(patientId, key){
+        patients[patientId] = key;
+    }
     const doctorId = `doc-${getLength()}`;
     const {publicKey, privateKey} = generateKeyPair();
     addKey(publicKey, doctorId);
@@ -34,7 +37,7 @@ portfinder.getPort(function (err, PORT) {
         const { host, port } = req.body;
         const { callback } = req.query;
         const node = `http://${host}:${port}`;
-        const socketNode = socketListeners(client(node), blockchain, doctorId, privateKey, patients, updateBreakFlag);
+        const socketNode = socketListeners(client(node), blockchain, doctorId, privateKey, addPatient, updateBreakFlag);
         blockchain.addNode(socketNode);
         if (callback === 'true') {
             console.info(`Added node ${node} back`);
@@ -55,10 +58,10 @@ portfinder.getPort(function (err, PORT) {
             return res.status(400).json({error:"missing requirements"});
         }
         const patientId = uuidv4();
-        const pateintKey = generateSymmetricKey();
-        patients[patientId] = pateintKey;
+        const patientKey = generateSymmetricKey();
+        patients[patientId] = patientKey;
         const tx = new Transaction(doctorId, patientId, req.body,null);
-        tx.encryptData(pateintKey.key, pateintKey.iv);
+        tx.encryptData(patientKey.key, patientKey.iv);
         tx.signTransaction(privateKey);
         io.emit(actions.ADD_TRANSACTION, tx);
         res.json({ message: 'transaction success' }).end();
@@ -70,19 +73,19 @@ portfinder.getPort(function (err, PORT) {
         if(!bloodPressure || !pulse || !temperature || !reason || !medications || !diagnosis){
             return res.status(400).json({error:"missing requirements"});
         }
-        pateintKey = patients[patientId];
-        if(!pateintKey){
+        const patientKey = patients[patientId];
+        if(!patientKey){
             return res.status(400).json({error:"patient not found"});
         }
         const tx = new Transaction(doctorId, patientId, req.body, referral);
-        tx.encryptData(pateintKey.key, pateintKey.iv);
+        tx.encryptData(patientKey.key, patientKey.iv);
         tx.signTransaction(privateKey);
         if(referral){
             const referralPublicKey = getKey(referral);
             if(!referralPublicKey){
                 return res.status(400).json({error:"invalid referral"});
             }
-            io.emit(actions.REFERRAL, encrypt(JSON.stringify(pateintKey), referralPublicKey), patientId, referral);
+            io.emit(actions.REFERRAL, encrypt(JSON.stringify(patientKey), referralPublicKey), patientId, referral);
         }
         io.emit(actions.ADD_TRANSACTION, tx);
         res.json({ message: 'transaction success' }).end();
@@ -115,7 +118,7 @@ portfinder.getPort(function (err, PORT) {
         });
     });
 
-    blockchain.addNode(socketListeners(client(`http://localhost:${PORT}`), blockchain, doctorId, privateKey, patients, updateBreakFlag));
+    blockchain.addNode(socketListeners(client(`http://localhost:${PORT}`), blockchain, doctorId, privateKey, addPatient, updateBreakFlag));
 
     httpServer.listen(PORT, () =>{
         console.info(`Server started on port ${PORT}`);

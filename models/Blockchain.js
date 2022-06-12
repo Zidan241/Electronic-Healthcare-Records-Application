@@ -18,7 +18,6 @@ class Blockchain {
     this.io = io;
     this.getBreakFlag = getBreakFlag;
     this.updateBreakFlag = updateBreakFlag;
-    console.log("Blockchain created");
   }
   /**
    * @returns {Block}
@@ -49,9 +48,9 @@ class Blockchain {
       //TODO: check if this docotor is allowed to add a transaction for this patient
 
       //get the patients last transaction
-      const lastTransactionIndex = this.getIndexOfLastTransaction(transaction.patientId);
-      const lastTransaction = null;
-      const allowedDoctors = [];
+      var lastTransactionIndex = this.getIndexOfLastTransaction(transaction.patientId);
+      var lastTransaction = null;
+      var allowedDoctors = [];
       if(lastTransactionIndex != null){
         lastTransaction = this.blockchain[lastTransactionIndex[0]].transactions[lastTransactionIndex[1]];
         allowedDoctors = lastTransaction.allowedDoctors;
@@ -71,7 +70,7 @@ class Blockchain {
       
       //add transaction to buffer
       this.transactionBuffer.push(transaction);
-      console.log("Transaction added");
+      console.info("Transaction added");
       //check if buffer is full
       if (this.transactionBuffer.length >= this.bufferLimit) {
         console.info("Starting mining block...");
@@ -82,7 +81,6 @@ class Blockchain {
     } else {
       //verification failed
       console.error("Transaction verification failed");
-      console.error(transaction);
     }
   };
 
@@ -98,10 +96,10 @@ class Blockchain {
     const breakFlag = await generateProofOfWork(newBlock, this.difficulty, this.getBreakFlag);
     if (breakFlag == false){
       this.blockchain.push(newBlock);
-      console.log("Block successfully mined!");
+      console.info("Block successfully mined!");
       this.io.emit(actions.END_MINING, this.blockchain);
     } else {
-      console.log("Block not mined!");
+      console.info("Block not mined!");
     }
   };
 
@@ -128,6 +126,7 @@ class Blockchain {
    * @returns {number[]} all encrypted transactions for a patient and their index in the blockchain
    */
   getIndexOfLastTransaction(patientId){
+    //check the buffer
     for (let i = this.blockchain.length - 1 ; i >= 0 ; i--) {
       for (let j = 0 ; j < this.blockchain[i].transactions.length ; j++) {
         if (this.blockchain[i].transactions[j].patientId === patientId) {
@@ -146,8 +145,6 @@ class Blockchain {
       const currentBlock = this.blockchain[i];
       const previousBlock = this.blockchain[i - 1];
       if (currentBlock.hash != currentBlock.generateHash()) {
-        console.log(currentBlock.generateHash()) ;
-        console.log(currentBlock.generateHash()) ;
         console.error("Block #" + i + " hash is invalid");
         return false;
       }

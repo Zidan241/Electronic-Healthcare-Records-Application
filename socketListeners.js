@@ -3,7 +3,7 @@ const {decrypt} = require('./utils/helperFunctions');
 const Transaction = require('./models/Transaction');
 const Blockchain = require('./models/Blockchain');
 
-const socketListeners = (socket, chain, doctorId, privateKey, patients, updateBreakFlag) => {
+const socketListeners = (socket, chain, doctorId, privateKey, addPatient, updateBreakFlag) => {
   socket.on(actions.ADD_TRANSACTION, (transaction) => {
     try{
       const tx = new Transaction();
@@ -17,27 +17,25 @@ const socketListeners = (socket, chain, doctorId, privateKey, patients, updateBr
   });
 
   socket.on(actions.END_MINING, (blocks) => {
-    console.log('End Mining encountered');
+    console.info('End Mining encountered');
     updateBreakFlag(true);
-    console.log(blocks[1]);
     const blockchain = new Blockchain();
     blockchain.parseBlockchain(blocks);
-    console.log(blockchain.blockchain[1]);
     if (blockchain.validateChainIntegrity() && blockchain.blockchain.length >= chain.blockchain.length) {
-      chain.blockchain = blockchain.blockChain;
+      chain.blockchain = blockchain.blockchain;
       console.info('Chain replaced');
     }
     else{
-      console.log('Invalid or outdated chain');
+      console.error('Invalid or outdated chain');
     }
   });
 
   socket.on(actions.REFERRAL, (encryptedData, patientId, referralId) => {
-    console.log('Referral encountered');
+    console.info('Referral encountered');
     if(referralId == doctorId){
       const decryptedData = decrypt(encryptedData, privateKey);
-      const key = JSON.parse(decryptedData);
-      patients[patientId] = key;
+      const parsedKey = JSON.parse(decryptedData);
+      addPatient(patientId, {key: Buffer.from(parsedKey.key.data), iv: Buffer.from(parsedKey.iv.data)});
     }
   });
 
