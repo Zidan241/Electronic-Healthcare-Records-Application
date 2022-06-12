@@ -12,7 +12,7 @@ class Transaction {
       this.referralId = referralId;
       this.patientId = patientId;
       this.data = data;
-      this.timestamp = Date.now();
+      this.timestamp = new Date();
     };
 
     /**
@@ -55,7 +55,7 @@ class Transaction {
       this.referralId = transaction.referralId;
       this.patientId = transaction.patientId;
       this.data = transaction.data;
-      this.timestamp = transaction.timestamp;
+      this.timestamp = new Date(transaction.timestamp);
       this.signature = transaction.signature;
     };
 };

@@ -12,34 +12,42 @@ var portfinder = require('portfinder');
 const {generateKeyPair, generateSymmetricKey, encrypt} = require('./utils/helperFunctions');
 const {addKey, getLength, getKey} = require('./db/publicKeysStorage');
 const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
 
 portfinder.getPort(function (err, PORT) {
-    const blockchain = new Blockchain(4, 2, io);
+    var breakFlag = false;
+    function updateBreakFlag(flag){
+        breakFlag = flag;
+    };
+    async function getBreakFlag(){
+        return breakFlag;
+    };
+
+    const blockchain = new Blockchain(4, 2, io, getBreakFlag, updateBreakFlag);
     const patients = {};
     const doctorId = `doc-${getLength()}`;
     const {publicKey, privateKey} = generateKeyPair();
     addKey(publicKey, doctorId);
-    
 
     app.use(bodyParser.json());
 
     app.post('/nodes', (req, res) => {
-    const { host, port } = req.body;
-    const { callback } = req.query;
-    const node = `http://${host}:${port}`;
-    const socketNode = socketListeners(client(node), blockchain, doctorId, privateKey, patients);
-    blockchain.addNode(socketNode, blockchain);
-    if (callback === 'true') {
-        console.info(`Added node ${node} back`);
-        res.json({ status: 'Added node Back' }).end();
-    } else {
-        axios.post(`${node}/nodes?callback=true`, {
-            host: req.hostname,
-            port: PORT,
-        });
-        console.info(`Added node ${node}`);
-        res.json({ status: 'Added node' }).end();
-    }
+        const { host, port } = req.body;
+        const { callback } = req.query;
+        const node = `http://${host}:${port}`;
+        const socketNode = socketListeners(client(node), blockchain, doctorId, privateKey, patients, updateBreakFlag);
+        blockchain.addNode(socketNode);
+        if (callback === 'true') {
+            console.info(`Added node ${node} back`);
+            res.json({ status: 'Added node Back' }).end();
+        } else {
+            axios.post(`${node}/nodes?callback=true`, {
+                host: req.hostname,
+                port: PORT,
+            });
+            console.info(`Added node ${node}`);
+            res.json({ status: 'Added node' }).end();
+        }
     });
 
     app.post('/addPatient', (req, res) => {
@@ -92,7 +100,7 @@ portfinder.getPort(function (err, PORT) {
         });
     });
 
-    blockchain.addNode(socketListeners(client(`http://localhost:${PORT}`), blockchain));
+    blockchain.addNode(socketListeners(client(`http://localhost:${PORT}`), blockchain, doctorId, privateKey, patients, updateBreakFlag));
 
     httpServer.listen(PORT, () =>{
         console.info(`Server started on port ${PORT}`);

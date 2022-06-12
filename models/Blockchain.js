@@ -1,13 +1,14 @@
 const Block = require('./Block.js');
 const Transaction = require('./Transaction.js');
 const actions = require('../utils/constants');
+const { generateHash } = require('../utils/helperFunctions.js');
 
 class Blockchain {
   /**
    * @param {number} difficulty
    * @param {number} bufferLimit
    */
-  constructor(difficulty, bufferLimit, io) {
+  constructor(difficulty, bufferLimit, io, getBreakFlag, updateBreakFlag) {
     this.blockchain = [this.createGenesisBlock()];
     // list of transactions that are yet to mined to a block
     this.transactionBuffer = [];
@@ -15,13 +16,15 @@ class Blockchain {
     this.bufferLimit = bufferLimit;
     this.nodes = [];
     this.io = io;
+    this.getBreakFlag = getBreakFlag;
+    this.updateBreakFlag = updateBreakFlag;
     console.log("Blockchain created");
   }
   /**
    * @returns {Block}
    */
   createGenesisBlock() {
-    return new Block(0, Date.parse("2017-01-01"), [], "0", 0);
+    return new Block(0, new Date("2017-01-01"), [], "0", null, 0);
   };
 
   /**
@@ -75,7 +78,7 @@ class Blockchain {
       //check if buffer is full
       if (this.transactionBuffer.length >= this.bufferLimit) {
         console.info("Starting mining block...");
-        process.env.BREAK = false;
+        this.updateBreakFlag(false);
         this.mineBlock();
         this.transactionBuffer = [];
       }
@@ -92,13 +95,16 @@ class Blockchain {
       new Date(),
       this.transactionBuffer,
       this.getLatestBlock().hash,
+      null,
       0
     );
-    const breakFlag = await newBlock.mineBlock(this.difficulty);
-    if (breakFlag != "true") {
+    const breakFlag = await generateProofOfWork(newBlock, this.difficulty, this.getBreakFlag);
+    if (breakFlag == false){
       this.blockchain.push(newBlock);
       console.log("Block successfully mined!");
       this.io.emit(actions.END_MINING, this.blockchain);
+    } else {
+      console.log("Block not mined!");
     }
   };
 
@@ -129,7 +135,6 @@ class Blockchain {
       for (let j = 0 ; j < this.blockchain[i].transactions.length ; j++) {
         if (this.blockchain[i].transactions[j].patientId === patientId) {
           return [i,j];
-          break;
         }
       }
     }
@@ -140,22 +145,21 @@ class Blockchain {
    * @returns {boolean}
    */
   validateChainIntegrity() {
-    // Check if the Genesis block is valid
-    const realGenesis = JSON.stringify(this.createGenesisBlock());
-
-    if (realGenesis !== JSON.stringify(this.blockchain[0])) {
-      return false;
-    }
     for (let i = 1; i < this.blockchain.length; i++) {
       const currentBlock = this.blockchain[i];
       const previousBlock = this.blockchain[i - 1];
-      if (currentBlock.hash !== currentBlock.generateHash()) {
+      if (currentBlock.hash != currentBlock.generateHash()) {
+        console.log(currentBlock.generateHash()) ;
+        console.log(currentBlock.generateHash()) ;
+        console.error("Block #" + i + " hash is invalid");
         return false;
       }
-      if (currentBlock.previousHash !== previousBlock.hash) {
+      if (currentBlock.previousHash != previousBlock.hash) {
+        console.error("Block #" + i + " previous hash is invalid");
         return false;
       }
       if (!currentBlock.hasValidTransactions()) {
+        console.error("Block #" + i + " has invalid transactions");
         return false;
       }
     }
@@ -164,10 +168,24 @@ class Blockchain {
 
   parseBlockchain(blocks) {
     this.blockchain = blocks.map(block => {
-      const newBlock = new Block(block.index, block.timestamp, block.transactions, block.previousHash, block.nonce);
+      const newBlock = new Block(0);
+      newBlock.parseBlock(block);
       return newBlock;
     });
   };
 };
+
+const generateProofOfWork = (block, difficulty, getBreakFlag) => new Promise((resolve) => {
+  setImmediate(async () => {
+    const END_MINING = getBreakFlag();
+    if (block.hash.substring(0, difficulty) == "0".repeat(difficulty) || END_MINING == true) {
+      resolve(END_MINING);
+    } else  {
+      block.nonce = Math.random();
+      block.hash = block.generateHash();
+      resolve(await generateProofOfWork(block, difficulty, getBreakFlag));
+    }
+  });
+});
 
 module.exports = Blockchain;

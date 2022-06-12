@@ -3,7 +3,7 @@ const {decrypt} = require('./utils/helperFunctions');
 const Transaction = require('./models/Transaction');
 const Blockchain = require('./models/Blockchain');
 
-const socketListeners = (socket, chain, doctorId, privateKey, patients) => {
+const socketListeners = (socket, chain, doctorId, privateKey, patients, updateBreakFlag) => {
   socket.on(actions.ADD_TRANSACTION, (transaction) => {
     try{
       const tx = new Transaction();
@@ -18,15 +18,16 @@ const socketListeners = (socket, chain, doctorId, privateKey, patients) => {
 
   socket.on(actions.END_MINING, (blocks) => {
     console.log('End Mining encountered');
-    process.env.BREAK = true;
+    updateBreakFlag(true);
     const blockchain = new Blockchain();
     blockchain.parseBlockchain(blocks);
-    console.log(chain);
+    console.log(blockchain[1]);
     if (blockchain.validateChainIntegrity() && blockchain.blockchain.length >= chain.blockchain.length) {
       chain.blockchain = blockchain.blockChain;
+      console.info('Chain replaced');
     }
     else{
-      console.log('Invalid chain');
+      console.log('Invalid or outdated chain');
     }
   });
 
